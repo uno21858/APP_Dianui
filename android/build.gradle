@@ -1,0 +1,32 @@
+buildscript {
+    ext.kotlin_version = '2.1.0' // 🔹 Asegurar que se use la última versión
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.3.0" // 🔹 Última versión estable de Gradle
+        classpath "com.google.gms:google-services:4.4.0" // 🔹 Última versión del plugin de Firebase
+        classpath "com.google.firebase:perf-plugin:1.4.2" // plugin de Performance Monitoring
+        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.2" // 🔹 Última versión del plugin de Crashlytics
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

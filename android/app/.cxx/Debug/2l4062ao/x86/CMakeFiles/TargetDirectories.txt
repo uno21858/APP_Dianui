@@ -1,0 +1,2 @@
+C:/Users/galoa/OneDrive/Documents/GitHub/Dianui/android/app/.cxx/Debug/2l4062ao/x86/CMakeFiles/edit_cache.dir
+C:/Users/galoa/OneDrive/Documents/GitHub/Dianui/android/app/.cxx/Debug/2l4062ao/x86/CMakeFiles/rebuild_cache.dir
