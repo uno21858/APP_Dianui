@@ -1,0 +1,93 @@
+# Guía para crear firebase_options.dart
+
+## Método 1: FlutterFire CLI (Recomendado)
+
+1. Instalar/Actualizar FlutterFire CLI:
+   dart pub global activate flutterfire_cli
+
+2. Si falla, forzar actualización:
+   dart pub global activate flutterfire_cli --overwrite
+
+3. Configurar Firebase:
+   flutterfire configure
+
+4. Seleccionar:
+   - Tu proyecto de Firebase existente
+   - Plataformas (Android, iOS, Web)
+   - Confirmar configuración
+
+5. El archivo se generará automáticamente en: lib/firebase_options.dart
+
+## Método 2: Manual (Si FlutterFire CLI falla)
+
+1. Ir a Firebase Console: https://console.firebase.google.com
+2. Seleccionar tu proyecto
+3. Ir a "Configuración del proyecto" (ícono engranaje)
+4. En "Tus apps" encontrar los valores para cada plataforma:
+
+   Android:
+   - API Key
+   - App ID
+   - Project ID
+   - Messaging Sender ID
+
+   iOS:
+   - API Key
+   - App ID
+   - Project ID
+   - Messaging Sender ID
+   - iOS Bundle ID
+
+   Web:
+   - API Key
+   - App ID
+   - Project ID
+   - Messaging Sender ID
+   - Auth Domain
+   - Storage Bucket
+
+5. Crear manualmente lib/firebase_options.dart con estos valores
+
+## Ubicación del archivo:
+- Debe estar en: lib/firebase_options.dart
+- NO en: lib/core/constants/firebase_options.dart
+
+## Import en main.dart:
+import 'firebase_options.dart';
+
+## Verificar funcionamiento:
+- La app debe cargar sin errores
+- Firebase debe inicializarse correctamente
+- No más pantalla en blanco
+
+# ------------------------------------------------------------------------------------------------
+# Guide to create firebase_options.dart
+
+## Method 1: FlutterFire CLI (Recommended)
+
+1. Install/Update FlutterFire CLI:
+   dart pub global activate flutterfire_cli
+
+2. If it fails, force update:
+   dart pub global activate flutterfire_cli --overwrite
+
+3. Configure Firebase:
+   flutterfire configure
+
+4. Select:
+   - Your existing Firebase project
+   - Platforms (Android, iOS, Web)
+   - Confirm configuration
+
+5. The file will be generated automatically at: lib/firebase_options.dart
+
+## Method 2: Manual (If FlutterFire CLI fails)
+
+1. Go to Firebase Console: https://console.firebase.google.com
+2. Select your project
+3. Go to "Project settings" (gear icon)
+4. In "Your apps" find the values for each platform:
+
+   Android:
+   - API Key
+   - App ID
