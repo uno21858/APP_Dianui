@@ -208,7 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (userDoc.exists) {
       final data = userDoc.data() as Map<String, dynamic>;
 
-      // 🔹 CARGAR RIESGOS FAMILIARES DESDE SUBCOLECCIÓN (FUERA DE setState)
+      // Cargar los riesgos a firebase y luego asignarlos a la variable finalFamilyRisks
       final QuerySnapshot riesgosSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(user!.uid)
@@ -220,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
           .map((doc) => (doc.data() as Map<String, dynamic>)['riesgo'] as String)
           .toList();
 
-      // Determinar qué riesgos usar (subcolección o array legacy)
+      // Si no hay riesgos en Firestore, usar los del campo 'familyRisks' del documento principal
       final List<String> finalFamilyRisks = riesgosFromFirestore.isNotEmpty
           ? riesgosFromFirestore
           : (data.containsKey('familyRisks')

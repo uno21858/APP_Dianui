@@ -97,7 +97,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
 
-        // 🔹 CARGAR RIESGOS FAMILIARES DESDE SUBCOLECCIÓN
+        // Carga los riesgos familiares desde la subcolección de Firestore
         final QuerySnapshot riesgosSnapshot = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
