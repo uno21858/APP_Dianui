@@ -150,6 +150,26 @@ class _ProfilePageState extends State<ProfilePage> {
   final int challengeDurationDays = 21;
   List<Map<String, dynamic>> _completedChallenges = [];
 
+
+  List<String> _userFamilyRisks = [];
+  final Map<String, String> _riskIcons = {
+    'Diabetes': '💉',
+    'Hipertensión': '🩺',
+    'Obesidad': '⚖️',
+    'Enfermedad cardíaca': '❤️',
+    'Colesterol alto': '🧪',
+    'Cáncer': '🎗️',
+    'Osteoporosis': '🦴',
+    'Enfermedad renal': '🩸',
+    'Accidente cerebrovascular': '🧠',
+    'Enfermedad hepática': '🫁',
+    'Depresión': '😔',
+    'Alzheimer': '🧠',
+    'Artritis': '🦴',
+    'Ninguno': '✅',
+  };
+
+  // Lista de retos predefinidos
   final List<Map<String, dynamic>> retos = [
     {"icon": "🍫", "color": Colors.brown, "texto": "Dejar el chocolate"},
     {"icon": "🍭", "color": Colors.cyanAccent, "texto": "Dejar el azúcar"},
@@ -188,6 +208,25 @@ class _ProfilePageState extends State<ProfilePage> {
     if (userDoc.exists) {
       final data = userDoc.data() as Map<String, dynamic>;
 
+      // 🔹 CARGAR RIESGOS FAMILIARES DESDE SUBCOLECCIÓN (FUERA DE setState)
+      final QuerySnapshot riesgosSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('riesgos_familiares')
+          .orderBy('orden')
+          .get();
+
+      final List<String> riesgosFromFirestore = riesgosSnapshot.docs
+          .map((doc) => (doc.data() as Map<String, dynamic>)['riesgo'] as String)
+          .toList();
+
+      // Determinar qué riesgos usar (subcolección o array legacy)
+      final List<String> finalFamilyRisks = riesgosFromFirestore.isNotEmpty
+          ? riesgosFromFirestore
+          : (data.containsKey('familyRisks')
+              ? List<String>.from(data['familyRisks'])
+              : []);
+
       setState(() {
         _userData = data;
         _isLoading = false;
@@ -216,6 +255,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
           _challengeStartTime = ts.toDate();
         }
+
+        // 🔹 ASIGNAR RIESGOS FAMILIARES (YA CALCULADOS ARRIBA)
+        _userFamilyRisks = finalFamilyRisks;
       });
     } else {
       setState(() => _isLoading = false);
@@ -462,9 +504,11 @@ class _ProfilePageState extends State<ProfilePage> {
           "Riesgos familiares",
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        _buildEmojiRow('💉', 'Diabetes'),
-        _buildEmojiRow('🩺', 'Hipertensión'),
-        _buildEmojiRow('⚖️', 'Obesidad'),
+        // 🔹 FILTRAR Y MOSTRAR LOS RIESGOS DEL USUARIO
+        ..._userFamilyRisks.map((risk) {
+          final emoji = _riskIcons[risk] ?? '❓'; // Emoji por defecto si no se encuentra
+          return _buildEmojiRow(emoji, risk);
+        }).toList(),
         const SizedBox(height: 20),
         if (_activeChallenge != null && _challengeStartTime != null)
           ChallengeCounterWidget(

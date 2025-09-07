@@ -46,6 +46,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
     'Otro'
   ];
 
+  // 🔹 NUEVA FUNCIONALIDAD: Riesgos familiares
+  List<String> _selectedFamilyRisks = [];
+  final List<String> _familyRisks = [
+    'Diabetes',
+    'Hipertensión',
+    'Obesidad',
+    'Enfermedad cardíaca',
+    'Colesterol alto',
+    'Cáncer',
+    'Osteoporosis',
+    'Enfermedad renal',
+    'Accidente cerebrovascular',
+    'Enfermedad hepática',
+    'Depresión',
+    'Alzheimer',
+    'Artritis',
+    'Ninguno',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +96,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
+
+        // 🔹 CARGAR RIESGOS FAMILIARES DESDE SUBCOLECCIÓN
+        final QuerySnapshot riesgosSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('riesgos_familiares')
+            .orderBy('orden')
+            .get();
+
+        final List<String> riesgosFromFirestore = riesgosSnapshot.docs
+            .map((doc) => (doc.data() as Map<String, dynamic>)['riesgo'] as String)
+            .toList();
+
         setState(() {
           _nameController.text = userData['name'] ?? '';
           _ageController.text = userData['age']?.toString() ?? '';
@@ -84,6 +116,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _selectedCity = userData['city'];
           _selectedOccupation = userData['occupation'];
           _currentProfileImage = userData['profileImage'];
+          // Cargar riesgos familiares desde subcolección
+          _selectedFamilyRisks = riesgosFromFirestore;
         });
       }
     } catch (e) {
@@ -165,6 +199,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         'city': _selectedCity ?? 'N/A',
         'occupation': _selectedOccupation,
         'updatedAt': FieldValue.serverTimestamp(),
+        // Actualizar riesgos familiares
+        'familyRisks': _selectedFamilyRisks,
       };
 
       // Subir imagen si se seleccionó una nueva
@@ -286,6 +322,166 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  // 🔹 NUEVO MÉTODO: Modal para selección múltiple de riesgos familiares
+  void _showMultiSelectModal(
+    BuildContext context,
+    List<String> options,
+    String title,
+    Function(List<String>) onSelected,
+    List<String> currentValues,
+  ) {
+    List<String> tempSelected = List.from(currentValues);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    height: 4,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '${tempSelected.length} seleccionados',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                setModalState(() {
+                                  tempSelected.clear();
+                                });
+                              },
+                              child: const Text('Limpiar'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                onSelected(tempSelected);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Guardar'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        final bool isSelected = tempSelected.contains(option);
+
+                        // Manejar "Ninguno" como opción exclusiva
+                        final bool isNone = option == 'Ninguno';
+                        final bool hasNone = tempSelected.contains('Ninguno');
+
+                        return ListTile(
+                          title: Text(option),
+                          leading: Checkbox(
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              setModalState(() {
+                                if (isNone) {
+                                  // Si selecciona "Ninguno", limpia otras selecciones
+                                  if (value == true) {
+                                    tempSelected.clear();
+                                    tempSelected.add(option);
+                                  } else {
+                                    tempSelected.remove(option);
+                                  }
+                                } else {
+                                  // Si selecciona otro riesgo, quita "Ninguno"
+                                  if (value == true) {
+                                    tempSelected.remove('Ninguno');
+                                    tempSelected.add(option);
+                                  } else {
+                                    tempSelected.remove(option);
+                                  }
+                                }
+                              });
+                            },
+                            activeColor: Theme.of(context).primaryColor,
+                          ),
+                          onTap: () {
+                            setModalState(() {
+                              if (isNone) {
+                                if (isSelected) {
+                                  tempSelected.remove(option);
+                                } else {
+                                  tempSelected.clear();
+                                  tempSelected.add(option);
+                                }
+                              } else {
+                                if (isSelected) {
+                                  tempSelected.remove(option);
+                                } else {
+                                  tempSelected.remove('Ninguno');
+                                  tempSelected.add(option);
+                                }
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -519,6 +715,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             _selectedOccupation,
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        // Riesgos familiares (nueva sección)
+                        _buildMultiSelectField(
+                          title: "Riesgos familiares",
+                          values: _selectedFamilyRisks,
+                          icon: Icons.family_restroom,
+                          onTap: () => _showMultiSelectModal(
+                            context,
+                            _familyRisks,
+                            'Selecciona los riesgos familiares',
+                                (values) => setState(() => _selectedFamilyRisks = values),
+                            _selectedFamilyRisks,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -700,4 +910,86 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
   }
+
+  Widget _buildMultiSelectField({
+    required String title,
+    required List<String> values,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final bool isSelected = values.isNotEmpty;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : Colors.grey.withOpacity(0.3),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: values.map((value) {
+                      return Chip(
+                        label: Text(
+                          value,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                        backgroundColor: Theme.of(context).primaryColor,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
